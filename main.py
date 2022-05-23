@@ -10,10 +10,6 @@ username = os.getenv('USERNAME')
 password = os.getenv('PASSWORD')
 
 @dataclass
-class StudentData:
-    index_number: int
-
-@dataclass
 class Course:
     id: str # kod kursu
     course_name: str # nazwa kursu
@@ -25,17 +21,105 @@ class Course:
 class Semester:
     id: int
     number_of_ECTS: int
-    number_of_courses: int
     courses: list
+    number_of_courses: len(courses)
 
-def calculate_average(_courses: list) -> float:
+def calculate_average(courses: list) -> float:
+    '''
+    param: courses - list of Course objects
+
+    returns: average grade from given course list
+    '''
     grade_times_ects = 0
     ects_result = 0
-    for course in _courses:
+    for course in courses:
         grade_times_ects += course.grade * course.ects_value
         ects_result += course.ects_value
 
     return (grade_times_ects/ects_result)
+
+
+
+def divide_into_sublists(chunked_list: list):
+    '''
+    param: chunked list - raw list of undivided courses
+
+    Divides given lists into correct order
+
+    returns: list (semesters) of lists (courses in this semester) 
+    '''
+    courses_in_semester = []
+    semester_list = []
+    for chunck in chunked_list:
+        if(chunck[0].strip() != "Kod kursu"):
+            courses_in_semester.append(
+                Course(chunck[0].strip(), chunck[1].strip(), chunck[2].strip(), int(chunck[3]), float(chunck[4])))
+        else:
+            semester_list.append(courses_in_semester)
+            courses_in_semester = []
+    if courses_in_semester:
+        semester_list.append(courses_in_semester)
+    semester_list.pop(0)
+
+    return semester_list
+
+
+
+def filter_data(unfiltered_list: list) -> list:
+    '''
+    param: unfiltered_list - list with empty spaces and undivided into Course format
+
+    returns: beautiful filtered list
+    '''
+    unfiltered_list = list(filter(None, unfiltered_list))
+    chunked_list = list()
+    for i in range(0, len(unfiltered_list), 5):
+        chunked_list.append(unfiltered_list[i:i+5])
+    
+    return chunked_list
+
+
+
+def find_course_data(semester_table_data: str) -> list:
+    '''
+    params: soup - BeautifulSoup object to parse for proper course data
+
+    return: nice formatted data
+    '''
+    soup = BeautifulSoup(semester_table_data, 'html.parser')
+    list_of_courses = []
+    for tr in soup.find_all('tr'):
+        for td in tr:
+            word = str(td.text)
+            word = word.replace("\r\n", "")
+            word = word.replace("\xa0", "")
+            word = word.replace("\n", "")
+            word = word.strip()
+            list_of_courses.append(word)
+
+    return list_of_courses
+
+
+
+def find_courses_table(semester: int, courses: BeautifulSoup) -> list:
+    '''
+    params: semester to look for grades (all grades must be given)
+
+    returns: table with proper semester data
+    '''
+    semester_list = []
+    table = courses.find_all('table', {'class': 'KOLOROWA'})[semester + 3]
+    for row in table:
+        semester_list.append(row)
+    return semester_list
+
+class EdukacjaCl:
+    session: requests.session.Session
+    web_token: str
+    web_session_token: str
+
+    def __init__() -> None:
+        pass
 
 with requests.Session() as session:
     # get login page to get the client authorization key
@@ -69,48 +153,17 @@ with requests.Session() as session:
 
             courses = BeautifulSoup(get_index.content, 'html.parser')
 
-            semester_list = []
-            # semestry od 1 do 4, musi być wypelniony ocenami, inaczej wyjdzie zle
-            for i in range(4, 7):
-                table = courses.find_all('table', {'class': 'KOLOROWA'})[i]
-                for row in table:
-                    semester_list.append(row)
-            
+            data = []
+            data.append(find_courses_table(1, courses))
+            data.append(find_courses_table(2, courses))
+            data.append(find_courses_table(3, courses))
 
-            line = str(semester_list)
-            course_list = list()
-            soup = BeautifulSoup(line, 'html.parser')
         
-            for tr in soup.find_all('tr'):
-                for td in tr:
-                    word = str(td.text)
-                    word = word.replace("\r\n", "")
-                    word = word.replace("\xa0", "")
-                    word = word.replace("\n", "")
-                    word = word.strip()
-                    course_list.append(word)
+            course_list = find_course_data(str(data))
 
-            course_list = list(filter(None, course_list))
+            chunked_list = filter_data(course_list)
 
-            chunked_list = list()
-            for i in range(0, len(course_list), 5):
-                chunked_list.append(course_list[i:i+5])
+            semester_list = divide_into_sublists(chunked_list)
 
-            tmp_courses = []
-            semester_list = []
-            for chunck in chunked_list:
-                if(chunck[0].strip() != "Kod kursu"):
-                    tmp_courses.append(
-                        Course(chunck[0].strip(), chunck[1].strip(), chunck[2].strip(), int(chunck[3]), float(chunck[4])))
-                else:
-                    semester_list.append(tmp_courses)
-                    tmp_courses = []
-            
-            if tmp_courses:
-                semester_list.append(tmp_courses)
-
-            semester_list.pop(0)
-
-            for semester in semester_list:
+            for semester in reversed(semester_list):
                 print(calculate_average(semester))
-
