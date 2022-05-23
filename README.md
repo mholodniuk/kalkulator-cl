@@ -1,0 +1,1 @@
+kalkulator średniej z edukacja.cl
