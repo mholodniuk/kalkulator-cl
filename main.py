@@ -1,4 +1,5 @@
 import os
+from numpy import empty
 import requests
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
@@ -14,10 +15,10 @@ class StudentData:
 
 @dataclass
 class Course:
-    id: int # kod kursu
+    id: str # kod kursu
     course_name: str # nazwa kursu
     class_types: str # forma zajęć
-    ECTS_value: int # punkty ECTS 
+    ects_value: int # punkty ECTS 
     grade: float # ocena
 
 @dataclass
@@ -26,6 +27,15 @@ class Semester:
     number_of_ECTS: int
     number_of_courses: int
     courses: list
+
+def calculate_average(_courses: list) -> float:
+    grade_times_ects = 0
+    ects_result = 0
+    for course in _courses:
+        grade_times_ects += course.grade * course.ects_value
+        ects_result += course.ects_value
+
+    return (grade_times_ects/ects_result)
 
 with requests.Session() as session:
     # get login page to get the client authorization key
@@ -58,22 +68,16 @@ with requests.Session() as session:
             get_index = session.get(index)
 
             courses = BeautifulSoup(get_index.content, 'html.parser')
-            # decompose do usuniecia elementow !!
 
             semester_list = []
-            second = []
-            #iterate through all valid semesters -> must be given by user
-            # semestry od 1 do 4
-            for i in range(3, 7):
+            # semestry od 1 do 4, musi być wypelniony ocenami, inaczej wyjdzie zle
+            for i in range(4, 7):
                 table = courses.find_all('table', {'class': 'KOLOROWA'})[i]
                 for row in table:
                     semester_list.append(row)
-                    #print(row)
-
             
 
             line = str(semester_list)
-            #print(line)
             course_list = list()
             soup = BeautifulSoup(line, 'html.parser')
         
@@ -83,7 +87,7 @@ with requests.Session() as session:
                     word = word.replace("\r\n", "")
                     word = word.replace("\xa0", "")
                     word = word.replace("\n", "")
-                    word = word.replace("  ", " ")
+                    word = word.strip()
                     course_list.append(word)
 
             course_list = list(filter(None, course_list))
@@ -92,4 +96,17 @@ with requests.Session() as session:
             for i in range(0, len(course_list), 5):
                 chunked_list.append(course_list[i:i+5])
 
-            print(chunked_list)
+            courses_in_semester_list = []
+            semester_list = []
+            for chunck in chunked_list:
+                print(chunck)
+                if(chunck[0].strip() == "Kod kursu"):
+                    print("dupa")
+                else:
+                    course = Course(chunck[0].strip(), chunck[1].strip(), chunck[2].strip(), int(chunck[3]), float(chunck[4]))
+                    courses_in_semester_list.append(course)
+
+            for elem in semester_list:
+                print(elem)
+
+            print(calculate_average(semester_list[0]))
