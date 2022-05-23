@@ -96,17 +96,21 @@ with requests.Session() as session:
             for i in range(0, len(course_list), 5):
                 chunked_list.append(course_list[i:i+5])
 
-            courses_in_semester_list = []
+            tmp_courses = []
             semester_list = []
             for chunck in chunked_list:
-                print(chunck)
-                if(chunck[0].strip() == "Kod kursu"):
-                    print("dupa")
+                if(chunck[0].strip() != "Kod kursu"):
+                    tmp_courses.append(
+                        Course(chunck[0].strip(), chunck[1].strip(), chunck[2].strip(), int(chunck[3]), float(chunck[4])))
                 else:
-                    course = Course(chunck[0].strip(), chunck[1].strip(), chunck[2].strip(), int(chunck[3]), float(chunck[4]))
-                    courses_in_semester_list.append(course)
+                    semester_list.append(tmp_courses)
+                    tmp_courses = []
+            
+            if tmp_courses:
+                semester_list.append(tmp_courses)
 
-            for elem in semester_list:
-                print(elem)
+            semester_list.pop(0)
 
-            print(calculate_average(semester_list[0]))
+            for semester in semester_list:
+                print(calculate_average(semester))
+
