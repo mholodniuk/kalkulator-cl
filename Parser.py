@@ -3,35 +3,21 @@ from Course import Course
 
 class Parser:
 
-    def calculate_average(courses: list) -> float:
-        '''
-        param: courses - list of Course objects
-
-        returns: average grade from given course list
-        '''
-        grade_times_ects = 0
-        ects_result = 0
-        for course in courses:
-            grade_times_ects += course.grade * course.ects_value
-            ects_result += course.ects_value
-
-        return (grade_times_ects/ects_result)
-
-
     def divide_into_sublists(chunked_list: list) -> list:
         '''
         param: chunked list - raw list of undivided courses
 
-        Divides given lists into correct order
+        Divides given list into list of lists (list of semesters, which are list of courses)
+        and filters rows with title-data
 
         returns: list (semesters) of lists (courses in this semester) 
         '''
         courses_in_semester = []
         semester_list = []
-        for chunck in chunked_list:
-            if(chunck[0].strip() != "Kod kursu"):
+        for chunk in chunked_list:
+            if(chunk[0].strip() != "Kod kursu"):
                 courses_in_semester.append(
-                    Course(chunck[0].strip(), chunck[1].strip(), chunck[2].strip(), int(chunck[3]), float(chunck[4])))
+                    Course(chunk[0].strip(), chunk[1].strip(), chunk[2].strip(), int(chunk[3]), float(chunk[4])))
             else:
                 semester_list.append(courses_in_semester)
                 courses_in_semester = []
@@ -46,7 +32,10 @@ class Parser:
         '''
         param: unfiltered_list - list with empty spaces and undivided into Course format
 
-        returns: beautiful filtered list
+        Divides the result of find_course_data method into Course type chunks
+        (still including unnecessary title-data).
+
+        returns: filtered list
         '''
         filtered_list = list(filter(None, unfiltered_list))
         chunked_list = list()
@@ -58,9 +47,12 @@ class Parser:
 
     def find_course_data(semester_table_data: str) -> list:
         '''
-        params: str -  semester_table_data to parse and find proper course data
+        params: str -  HTML text to parse and find proper course data
 
-        return: nice formatted data
+        Removes all the unnecessary parts of HTML from course_table_data,
+        and transforms it into a list.
+
+        return: nice formatted data (unfiltered)
         '''
         soup = BeautifulSoup(semester_table_data, 'html.parser')
         list_of_courses = []
@@ -80,7 +72,9 @@ class Parser:
         '''
         params: semester to look for grades (all grades must be given)
 
-        returns: table with proper semester data
+        Finds all rows from the index table from given semester.
+
+        returns: table with proper semester data (raw HTML)
         '''
         semester_list = []
         table = courses.find_all('table', {'class': 'KOLOROWA'})[semester + 3]
