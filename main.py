@@ -1,169 +1,89 @@
 import os
-from numpy import empty
 import requests
 from bs4 import BeautifulSoup
-from dataclasses import dataclass
+from Parser import Parser
 from dotenv import load_dotenv
 
-load_dotenv('.env')
-username = os.getenv('USERNAME')
-password = os.getenv('PASSWORD')
-
-@dataclass
-class Course:
-    id: str # kod kursu
-    course_name: str # nazwa kursu
-    class_types: str # forma zajęć
-    ects_value: int # punkty ECTS 
-    grade: float # ocena
-
-@dataclass
-class Semester:
-    id: int
-    number_of_ECTS: int
-    courses: list
-    number_of_courses: len(courses)
-
-def calculate_average(courses: list) -> float:
-    '''
-    param: courses - list of Course objects
-
-    returns: average grade from given course list
-    '''
-    grade_times_ects = 0
-    ects_result = 0
-    for course in courses:
-        grade_times_ects += course.grade * course.ects_value
-        ects_result += course.ects_value
-
-    return (grade_times_ects/ects_result)
-
-
-
-def divide_into_sublists(chunked_list: list):
-    '''
-    param: chunked list - raw list of undivided courses
-
-    Divides given lists into correct order
-
-    returns: list (semesters) of lists (courses in this semester) 
-    '''
-    courses_in_semester = []
-    semester_list = []
-    for chunck in chunked_list:
-        if(chunck[0].strip() != "Kod kursu"):
-            courses_in_semester.append(
-                Course(chunck[0].strip(), chunck[1].strip(), chunck[2].strip(), int(chunck[3]), float(chunck[4])))
-        else:
-            semester_list.append(courses_in_semester)
-            courses_in_semester = []
-    if courses_in_semester:
-        semester_list.append(courses_in_semester)
-    semester_list.pop(0)
-
-    return semester_list
-
-
-
-def filter_data(unfiltered_list: list) -> list:
-    '''
-    param: unfiltered_list - list with empty spaces and undivided into Course format
-
-    returns: beautiful filtered list
-    '''
-    unfiltered_list = list(filter(None, unfiltered_list))
-    chunked_list = list()
-    for i in range(0, len(unfiltered_list), 5):
-        chunked_list.append(unfiltered_list[i:i+5])
-    
-    return chunked_list
-
-
-
-def find_course_data(semester_table_data: str) -> list:
-    '''
-    params: soup - BeautifulSoup object to parse for proper course data
-
-    return: nice formatted data
-    '''
-    soup = BeautifulSoup(semester_table_data, 'html.parser')
-    list_of_courses = []
-    for tr in soup.find_all('tr'):
-        for td in tr:
-            word = str(td.text)
-            word = word.replace("\r\n", "")
-            word = word.replace("\xa0", "")
-            word = word.replace("\n", "")
-            word = word.strip()
-            list_of_courses.append(word)
-
-    return list_of_courses
-
-
-
-def find_courses_table(semester: int, courses: BeautifulSoup) -> list:
-    '''
-    params: semester to look for grades (all grades must be given)
-
-    returns: table with proper semester data
-    '''
-    semester_list = []
-    table = courses.find_all('table', {'class': 'KOLOROWA'})[semester + 3]
-    for row in table:
-        semester_list.append(row)
-    return semester_list
-
 class EdukacjaCl:
-    session: requests.session.Session
+    session: requests.session
+    username: str
+    password: str
+    current_semester: int
     web_token: str
     web_session_token: str
+    index: str
 
-    def __init__() -> None:
-        pass
+    def __init__(self, session: requests.session, username=None, password=None) -> None:
+        self.session = session
+        if username is None or password is None:
+            #print('using data from .env file to log in')
+            if load_dotenv('.env'):
+                self.username = os.getenv('USERNAME')
+                self.password = os.getenv('PASSWORD')
+            else:
+                print('Didn`t find .env file')
+        else:
+            self.username = username
+            self.password = password
 
-with requests.Session() as session:
-    # get login page to get the client authorization key
-    get_login = session.get("https://edukacja.pwr.wroc.pl/EdukacjaWeb/studia.do")
-    if get_login:
-        # get the html code
-        soup = BeautifulSoup(get_login.content, 'html.parser')
-        web_token = soup.find('input', {'name': 'cl.edu.web.TOKEN'}).get('value')
+        self.web_token = self.get_web_token()        
+        self.web_session_token = self.get_web_session_token()
+        self.index = self.get_index()
+        self.current_semester = self.get_current_semester()
 
-        # get the token from form tag and compose login-post data
+    def get_web_token(self) -> str:
+        try:
+            get_login = self.session.get("https://edukacja.pwr.wroc.pl/EdukacjaWeb/studia.do")
+            home = BeautifulSoup(get_login.content, 'html.parser')
+            return home.find('input', {'name': 'cl.edu.web.TOKEN'}).get('value')
+        except requests.ConnectionError:
+            print('Unable to connect to edukacja.cl')
+
+    def get_web_session_token(self) -> str:
         data = {
-            'cl.edu.web.TOKEN': web_token,
-            'login': username,
-            'password': password,
+            'cl.edu.web.TOKEN': self.web_token,
+            'login': self.username,
+            'password': self.password 
         }
+        post_login = self.session.post("https://edukacja.pwr.wroc.pl/EdukacjaWeb/logInUser.do", data=data)
 
-        #log in 
-        post_login = session.post("https://edukacja.pwr.wroc.pl/EdukacjaWeb/logInUser.do", data=data)
-        #print(post_login.text)
-        if post_login:
-
+        if requests.get(post_login.url, auth=('user', 'pass')).status_code == 200:
             login = BeautifulSoup(post_login.content, 'html.parser')
-
             # get the token from form tag and compose login-post data
-            web_session_token = login.find('input', {'name': 'clEduWebSESSIONTOKEN'}).get('value')
+            return login.find('input', {'name': 'clEduWebSESSIONTOKEN'}).get('value')
+        else:
+            print('Unable to log in using your data')
+            exit()
 
-            # get the index subpage
-            index = "https://edukacja.pwr.wroc.pl/EdukacjaWeb/indeks.do?clEduWebSESSIONTOKEN=" + web_session_token + \
-                "&event=WyborSluchacza"
-            get_index = session.get(index)
+    def get_index(self) -> str:
+        # get the index subpage
+        index_url = "https://edukacja.pwr.wroc.pl/EdukacjaWeb/indeks.do?clEduWebSESSIONTOKEN=" + self.web_session_token + \
+            "&event=WyborSluchacza"
+        try:
+            return self.session.get(index_url).content
+        except:
+            print('Unable to get index')
+            exit()
 
-            courses = BeautifulSoup(get_index.content, 'html.parser')
+    def get_current_semester(self) -> int:
+        courses = BeautifulSoup(self.index, 'html.parser')
+        personal_data = Parser.find_course_data(str(Parser.find_courses_table(-3, courses)))
+        return int(personal_data[38])
 
+    def get_semester_gpa(self, number_of_semester) -> float:
+        if number_of_semester > self.current_semester:
+            print('incorrect semester chosen')
+        else:
+            courses = BeautifulSoup(self.index, 'html.parser')
             data = []
-            data.append(find_courses_table(1, courses))
-            data.append(find_courses_table(2, courses))
-            data.append(find_courses_table(3, courses))
+            data.append(Parser.find_courses_table((self.current_semester - number_of_semester), courses))
+            course_list = Parser.find_course_data(str(data))
+            course_list = Parser.divide_into_sublists(Parser.filter_data(course_list))
 
-        
-            course_list = find_course_data(str(data))
+            print(Parser.calculate_average(course_list[0]))
 
-            chunked_list = filter_data(course_list)
 
-            semester_list = divide_into_sublists(chunked_list)
-
-            for semester in reversed(semester_list):
-                print(calculate_average(semester))
+if __name__ == "__main__":
+    with requests.Session() as session:
+        edukacja = EdukacjaCl(session)
+        edukacja.get_semester_gpa(1)
