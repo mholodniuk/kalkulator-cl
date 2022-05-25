@@ -71,13 +71,13 @@ class EdukacjaCl:
         return int(personal_data[38])
 
     def get_semester_gpa(self, number_of_semester) -> float:
-        if number_of_semester > self.current_semester:
+        if number_of_semester >= self.current_semester:
             print('incorrect semester chosen')
         else:
             courses = BeautifulSoup(self.index, 'html.parser')
-            data = []
-            data.append(Parser.find_courses_table((self.current_semester - number_of_semester), courses))
-            course_list = Parser.find_course_data(str(data))
+            course_list = Parser.find_course_data(
+                str(Parser.find_courses_table((self.current_semester - number_of_semester), courses))
+            )
             course_list = Parser.divide_into_sublists(Parser.filter_data(course_list))
 
             print(Parser.calculate_average(course_list[0]))
@@ -86,4 +86,4 @@ class EdukacjaCl:
 if __name__ == "__main__":
     with requests.Session() as session:
         edukacja = EdukacjaCl(session)
-        edukacja.get_semester_gpa(1)
+        edukacja.get_semester_gpa(3)
