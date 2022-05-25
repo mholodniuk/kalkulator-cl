@@ -2,9 +2,9 @@
 
 Create `.env` file 
 
-In this file write:
+In this file insert your login data:
 ```
-USERNAME=nazwa_użytkownika_edukacja.cl
+USERNAME=pwr123456
 PASSWORD=hasło
 ```
 edit main and run
