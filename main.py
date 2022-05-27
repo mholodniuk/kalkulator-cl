@@ -1,9 +1,12 @@
+import json
 import os
+from numpy import outer
 import requests
 from bs4 import BeautifulSoup
 from Parser import Parser
 import dotenv
-from rsa import verify
+import getpass
+import html_to_json
 
 class EdukacjaCl:
     session: requests.session
@@ -32,7 +35,6 @@ class EdukacjaCl:
         self.web_session_token = self.get_web_session_token()
         self.index = self.get_index()
         self.current_semester = self.get_current_semester()
-
 
     def get_web_token(self) -> str:
         try:
@@ -71,9 +73,7 @@ class EdukacjaCl:
 
 
     def get_current_semester(self) -> int:
-        courses = BeautifulSoup(self.index, 'html.parser')
-        personal_data = Parser.find_course_data(str(Parser.find_courses_table(-3, courses)))
-        return int(personal_data[38])
+        return int(Parser.find_student_data(BeautifulSoup(self.index, 'html.parser'), 'Numer semestru'))
 
 
     def print_gpa_from_semester_list(self, semesters: list) -> None:
@@ -85,12 +85,12 @@ class EdukacjaCl:
             semesters_list = []
             for i in semesters:
                 semesters_list.extend(
-                    Parser.find_courses_table((self.current_semester - i), courses)    
+                    Parser.find_semester_table((self.current_semester - i), courses)    
                 )
 
             course_list = Parser.divide_into_sublists(
                 Parser.filter_data(
-                    Parser.find_course_data(str(semesters_list))
+                    Parser.search_for_rows_and_filter(str(semesters_list))
                 )
             )
             print(self.calculate_average_multiple_semesters(course_list))
@@ -106,13 +106,19 @@ class EdukacjaCl:
 
         return (grade_times_ects / ects_result)
 
+    def test(self):
+        pass
+        # courses = BeautifulSoup(self.index, 'html.parser')
+        # print(Parser.find_courses_data(courses, 1))
+
 
 if __name__ == "__main__":
     edukacja = EdukacjaCl(requests.Session())
     
-    number_of_semesters = str(input("Podaj semestry, z których średnie policzyć [np. 1 2 3]: "))
-    semester_list = list(number_of_semesters.split(' '))
-    semester_list = [int(i) for i in semester_list]
+    # no space in the end please
+    semesters_input = str(input("Podaj semestry, z których średnie policzyć (np. 1 2 3): "))
+    semester_list = [int(i) for i in list(semesters_input.split(' '))]
+    edukacja.test()
 
     edukacja.print_gpa_from_semester_list(semester_list)
     

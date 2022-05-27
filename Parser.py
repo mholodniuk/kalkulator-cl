@@ -1,8 +1,13 @@
+import imp
 from bs4 import BeautifulSoup
+from matplotlib.pyplot import table
 from Course import Course
+import html_to_json
+
 
 class Parser:
 
+    @staticmethod
     def divide_into_sublists(chunked_list: list) -> list:
         '''
         param: chunked list - raw list of undivided courses
@@ -27,7 +32,7 @@ class Parser:
 
         return semester_list
 
-
+    @staticmethod
     def filter_data(unfiltered_list: list) -> list:
         '''
         param: unfiltered_list - list with empty spaces and undivided into Course format
@@ -44,8 +49,8 @@ class Parser:
         
         return chunked_list
 
-
-    def find_course_data(semester_table_data: str) -> list:
+    @staticmethod
+    def search_for_rows_and_filter(semester_table_data: str) -> list:
         '''
         params: str -  HTML text to parse and find proper course data
 
@@ -67,17 +72,46 @@ class Parser:
 
         return list_of_courses
 
-
-    def find_courses_table(semester: int, courses: BeautifulSoup) -> list:
+    @staticmethod
+    def find_semester_table(semester: int, courses: BeautifulSoup) -> list:
         '''
         params: semester to look for grades (all grades must be given)
 
         Finds all rows from the index table from given semester.
 
-        returns: table with proper semester data (raw HTML)
+        returns: list with proper semester data (raw HTML)
         '''
+        # szukać dopóki nie znajdzie "Kod kursu ..."
         semester_list = []
-        table = courses.find_all('table', {'class': 'KOLOROWA'})[semester + 3]
-        for row in table:
+        tables = courses.find_all('table', {'class': 'KOLOROWA'})[semester + 3]
+        for row in tables:
             semester_list.append(row)
         return semester_list
+
+    @staticmethod
+    def find_student_data(courses: BeautifulSoup, data_to_look_for='Numer semestru') -> str:
+        '''
+        params: 
+            courses - html table from index subpage, 
+            data_to_look_for - type of information you want to extract
+
+        returns: value of wanted information element
+        '''
+        tables = courses.find('table', {'class': 'KOLOROWA'}) # first table - personal data
+        # filter
+        tables = list(filter(None, Parser.search_for_rows_and_filter(str(tables))))
+        # returns value of wanted parameter
+        return tables[tables.index(data_to_look_for) + 1]
+
+    # @staticmethod # nazwa do zmiany
+    # def find_courses_data(courses: BeautifulSoup, semester_to_look_for=1) -> list:
+
+    #     tables = courses.find_all('table', {'class': 'KOLOROWA'})
+    #     for table in tables:
+    #         for row in table:
+    #             print(row)
+    #         print('dupa')
+    #     # for table in tables:
+    #         # print(table)
+
+    #     return tables
