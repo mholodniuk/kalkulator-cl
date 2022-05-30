@@ -1,11 +1,20 @@
-# kalkulator średniej z edukacja.cl
+# Kalkulator średniej z edukacja.cl
 
-Create `.env` file 
 
-In this file insert your login data:
+Pobierz wszystkie wymagane biblioteki (plik `requirements.txt`) za pomocą polecenia:
+```
+pip3 install -r requirements.txt
+```
+
+Stwórz plik `.env`
+
+Uzupełnij go swoimi danymi:
 ```
 USERNAME=pwr123456
 PASSWORD=hasło
 ```
 
-and run
+Uruchom skrypt:
+```
+python3 Edukacja.cl
+```
