@@ -16,5 +16,5 @@ PASSWORD=hasło
 
 Uruchom skrypt:
 ```
-python3 Edukacja.cl
+python3 EdukacjaCl.py
 ```
