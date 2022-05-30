@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 @dataclass
 class Course:
-    id: str # kod kursu
-    course_name: str # nazwa kursu
-    class_types: str # forma zajęć
-    ects_value: int # punkty ECTS 
-    grade: float # ocena
+    id: str # course id
+    course_name: str # course name
+    class_types: str # course type
+    ects_value: int # ECTS value 
+    grade: float # final grade
