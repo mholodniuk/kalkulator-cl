@@ -1,10 +1,23 @@
 # Kalkulator średniej z edukacja.cl
 
+## Pobranie potrzebnych bibliotek
 
 Pobierz wszystkie wymagane biblioteki (plik `requirements.txt`) za pomocą polecenia:
 ```
 pip3 install -r requirements.txt
 ```
+
+## Uruchomienie skrpytu
+
+W głównej funkcji prgoramu uzupełnij konstruktor klasy `EdukacjaCl` swoimi danymi.
+
+Uruchom skrypt:
+```
+python3 EdukacjaCl.py
+```
+
+
+## Alternatywnie:
 
 Stwórz plik `.env`
 
