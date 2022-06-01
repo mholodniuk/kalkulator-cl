@@ -7,7 +7,7 @@ Pobierz wszystkie wymagane biblioteki (plik `requirements.txt`) za pomocą polec
 pip3 install -r requirements.txt
 ```
 
-## Uruchomienie skrpytu
+## Uruchomienie skryptu
 
 W głównej funkcji prgoramu uzupełnij konstruktor klasy `EdukacjaCl` swoimi danymi.
 
