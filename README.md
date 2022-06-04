@@ -9,7 +9,7 @@ pip3 install -r requirements.txt
 
 ## Uruchomienie skryptu
 
-W głównej funkcji prgoramu uzupełnij konstruktor klasy `EdukacjaCl` swoimi danymi.
+W głównej funkcji programu uzupełnij konstruktor klasy `EdukacjaCl` swoimi danymi.
 
 Uruchom skrypt:
 ```
