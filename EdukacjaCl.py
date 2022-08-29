@@ -85,7 +85,8 @@ class EdukacjaCl:
 
 
     def print_gpa_from_semester_list(self, semesters: list) -> None:
-        if any(nr < 1 or nr >= self.current_semester for nr in semesters):
+        # not sure about edge case here
+        if any(nr < 1 or nr > self.current_semester for nr in semesters):
             print('given semester(s) list is out of range')
         else:
             courses = BeautifulSoup(self.index, 'html.parser')
