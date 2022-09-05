@@ -13,14 +13,15 @@ class Parser:
 
         returns: value of wanted information element
         '''
-        tables = courses.find('table', {'class': 'KOLOROWA'}) # first table - personal data
+        tables = courses.find(
+            'table', {'class': 'KOLOROWA'})  # first table - personal data
         # filter
-        tables = list(filter(None, Parser.search_for_rows_and_filter(str(tables))))
+        tables = list(
+            filter(None, Parser.search_for_rows_and_filter(str(tables))))
         # returns value of wanted parameter
         return tables[tables.index(data_to_look_for) + 1]
 
-
-    @staticmethod 
+    @staticmethod
     def find_semesters_data(courses: BeautifulSoup, semester_to_look_for=1) -> list:
         '''
         params: semester to look for grades (all grades must be given)
@@ -29,12 +30,12 @@ class Parser:
 
         returns: list with proper semester data (raw HTML)
         '''
-        tables = courses.find('table', {'class': 'KOLOROWA', 'border': 0}).find_all('table')[semester_to_look_for + 1]
-        semester_list = [] 
+        tables = courses.find('table', {'class': 'KOLOROWA', 'border': 0}).find_all(
+            'table')[semester_to_look_for + 1]
+        semester_list = []
         for table in tables:
             semester_list.append(table)
         return semester_list
-
 
     @staticmethod
     def search_for_rows_and_filter(semester_table_data: str) -> list:
@@ -59,7 +60,6 @@ class Parser:
 
         return list_of_courses
 
-
     @staticmethod
     def filter_and_format_data(unfiltered_list: list) -> list:
         '''
@@ -74,9 +74,8 @@ class Parser:
         chunked_list = list()
         for i in range(0, len(filtered_list), 5):
             chunked_list.append(filtered_list[i:i + 5])
-        
-        return chunked_list
 
+        return chunked_list
 
     @staticmethod
     def split_into_course_format(chunked_list: list) -> list:
@@ -91,7 +90,7 @@ class Parser:
         courses_in_semester = []
         semester_list = []
         for chunk in chunked_list:
-            if(chunk[0].strip() != "Kod kursu"):
+            if (chunk[0].strip() != "Kod kursu"):
                 courses_in_semester.append(
                     Course(chunk[0].strip(), chunk[1].strip(), chunk[2].strip(), int(chunk[3]), float(chunk[4])))
             else:

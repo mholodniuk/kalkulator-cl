@@ -32,21 +32,21 @@ class EdukacjaCl:
             # create exmples directory and add your index.html file from edukacja.cl
             self.index = self.get_index_from_file('./examples/index.html')
         else:
-            self.web_token = self.get_web_token()        
+            self.web_token = self.get_web_token()
             self.web_session_token = self.get_web_session_token()
             self.index = self.get_index()
-            
+
         self.current_semester = self.get_current_semester()
 
     def get_web_token(self) -> str:
         try:
-            get_login = self.session.get("https://edukacja.pwr.wroc.pl/EdukacjaWeb/studia.do")
+            get_login = self.session.get(
+                "https://edukacja.pwr.wroc.pl/EdukacjaWeb/studia.do")
             home = BeautifulSoup(get_login.content, 'html.parser')
             return home.find('input', {'name': 'cl.edu.web.TOKEN'}).get('value')
         except requests.ConnectionError:
             print('Unable to connect to edukacja.cl')
             exit()
-
 
     def get_web_session_token(self) -> str:
         data = {
@@ -54,13 +54,13 @@ class EdukacjaCl:
             'login': self.username,
             'password': self.password
         }
-        post_login = self.session.post("https://edukacja.pwr.wroc.pl/EdukacjaWeb/logInUser.do", data=data)
+        post_login = self.session.post(
+            "https://edukacja.pwr.wroc.pl/EdukacjaWeb/logInUser.do", data=data)
 
         # to do: check if this was successful
         login = BeautifulSoup(post_login.content, 'html.parser')
-        
-        return login.find('input', {'name': 'clEduWebSESSIONTOKEN'}).get('value')
 
+        return login.find('input', {'name': 'clEduWebSESSIONTOKEN'}).get('value')
 
     def get_index(self) -> str:
         index_url = "https://edukacja.pwr.wroc.pl/EdukacjaWeb/indeks.do?clEduWebSESSIONTOKEN=" + self.web_session_token + \
@@ -79,10 +79,8 @@ class EdukacjaCl:
             print(f'Could not open {file_name}')
             exit()
 
-
     def get_current_semester(self) -> int:
         return int(Parser.find_student_data(BeautifulSoup(self.index, 'html.parser'), 'Numer semestru'))
-
 
     def print_gpa_from_semester_list(self, semesters: list) -> None:
         # not sure about edge case here
@@ -94,7 +92,8 @@ class EdukacjaCl:
             semesters_list = []
             for i in semesters:
                 semesters_list.extend(
-                    Parser.find_semesters_data(courses, (self.current_semester - i))    
+                    Parser.find_semesters_data(
+                        courses, (self.current_semester - i))
                 )
 
             course_list = Parser.split_into_course_format(
@@ -103,7 +102,6 @@ class EdukacjaCl:
                 )
             )
             print(self.calculate_average_multiple_semesters(course_list))
-
 
     def calculate_average_multiple_semesters(self, semesters: list) -> float:
         grade_times_ects = 0
@@ -119,9 +117,10 @@ class EdukacjaCl:
 if __name__ == "__main__":
     # edukacja = EdukacjaCl(requests.Session(), username=pwr123456, password=password)
     edukacja = EdukacjaCl(requests.Session(), from_file=False)
-    
+
     # no space on the end
-    semesters_input = str(input("Podaj semestry, z których średnie policzyć (np. 1 2 3): "))
+    semesters_input = str(
+        input("Podaj semestry, z których średnie policzyć (np. 1 2 3): "))
     semester_list = [int(i) for i in list(semesters_input.split(' '))]
 
     edukacja.print_gpa_from_semester_list(semester_list)
